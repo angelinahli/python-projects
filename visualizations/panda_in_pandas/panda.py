@@ -6,7 +6,6 @@ Create half of a face using shapes, then
 flip the face to create a whole panda.
 """
 
-import random
 import matplotlib.pyplot as plt
 import pandas as pd
 from math import sqrt
