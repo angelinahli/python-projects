@@ -1,5 +1,4 @@
-"""
--*- coding: utf-8 -*-
+"""-*- coding: utf-8 -*-
 Makes a rock-paper-scissors inspired game. Allows user to input any valid
 list of gestures to play with. Will output a set of rules on which gestures
 defeat other gestures, as well as allow the user to play a game against a
