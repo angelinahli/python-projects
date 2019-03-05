@@ -1,4 +1,34 @@
+from typing import List, Tuple, TypeVar
 import random
+
+class Cell:
+
+    def __init__(self, row: int, col: int, value: int):
+        self.row = row
+        self.col = col
+        self.value = value
+        self.is_mine = False
+        self.is_visible = False
+
+    def __repr__(self) -> str:
+        if not self.is_visible:
+            return " "
+        if self.is_mine:
+            return "X"
+        if self.value == 0:
+            return "."
+        return str(self.value)
+
+    def equals(self, cell):
+        return cell.row == self.row and cell.col == self.col
+
+    @classmethod
+    def get_random_mine(cls, max_val):
+        row = random.randint(0, max_val)
+        col = random.randint(0, max_val)
+        mine = cls(row, col, "X")
+        mine.is_mine = True
+        return mine
 
 class Minesweeper:
     """
@@ -20,8 +50,12 @@ class Minesweeper:
 
     DEFAULT_NUM_MINES = 10
     DEFAULT_GRID_LENGTH = 10
+    CELL_TYPE = TypeVar("Cell", bound=Cell)
 
-    def __init__(self, num_mines=DEFAULT_NUM_MINES, grid_length=DEFAULT_GRID_LENGTH, debug=False):
+    def __init__(self, 
+            num_mines: int= DEFAULT_NUM_MINES, 
+            grid_length: int=DEFAULT_GRID_LENGTH,
+            debug=False):
         """
         Initializes a game of Minesweeper.
         Requires that num_mines <= int((grid_length**2) / 2). - i.e. the maximum
@@ -42,7 +76,7 @@ class Minesweeper:
         self.num_visible = 0
         self.in_progress = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         rows = []
         top_indices = [" ", " "] + list(map(str, range(self.grid_length)))
         rows.append(" ".join(top_indices))
@@ -62,7 +96,7 @@ class Minesweeper:
 
     ## INITIALIZE GRID ##
 
-    def _get_new_grid(self, mines):
+    def _get_new_grid(self, mines: List[CELL_TYPE]) -> List[List[CELL_TYPE]]:
         grid = [ [ Cell(row, col, value=0) for col in range(self.grid_length) ] 
                  for row in range(self.grid_length) ]
         for mine in mines:
@@ -71,7 +105,7 @@ class Minesweeper:
             self._increment_mine_borders(grid, mine)
         return grid
 
-    def _increment_mine_borders(self, grid, mine):
+    def _increment_mine_borders(self, grid: List[List[CELL_TYPE]], mine: CELL_TYPE) -> None:
         row_lower = self._get_valid_coord(mine.row - 1)
         row_upper = self._get_valid_coord(mine.row + 1)
         col_lower = self._get_valid_coord(mine.col - 1)
@@ -81,8 +115,7 @@ class Minesweeper:
                 if not grid[row][col].is_mine:
                     grid[row][col].value += 1
 
-    def _get_valid_coord(self, value):
-        assert type(value) == int
+    def _get_valid_coord(self, value: int) -> int:
         return_value = value
         if return_value < 0:
             return_value = 0
@@ -90,7 +123,7 @@ class Minesweeper:
             return_value = self.grid_length - 1
         return return_value
 
-    def _get_mines(self):
+    def _get_mines(self) -> List[CELL_TYPE]:
         mines = []
         for _ in range(self.num_mines):
             new_mine = Cell.get_random_mine(self.grid_length - 1)
@@ -101,7 +134,7 @@ class Minesweeper:
 
     ## PLAY MOVE ##
 
-    def _play_move(self, row, col):
+    def _play_move(self, row: int, col: int) -> None:
         """
         Updates the game to accomodate for a move at row, col
         """
@@ -110,13 +143,13 @@ class Minesweeper:
         self._update_visibility(row, col)
         self._update_game_status()
 
-    def _update_visibility(self, row, col):
+    def _update_visibility(self, row: int, col: int) -> None:
         if not self._is_valid_coord(row) or \
                 not self._is_valid_coord(col) or \
-                self.grid[row][col].visible:
+                self.grid[row][col].is_visible:
             return
 
-        self.grid[row][col].visible = True
+        self.grid[row][col].is_visible = True
         self.num_visible += 1
 
         if self.grid[row][col].value == 0:
@@ -125,22 +158,22 @@ class Minesweeper:
             self._update_visibility(row, col - 1)
             self._update_visibility(row, col + 1)
 
-    def _is_valid_coord(self, value):
-        return type(value) == int and 0 <= value < self.grid_length
+    def _is_valid_coord(self, value: int) -> bool:
+        return 0 <= value < self.grid_length
 
-    def _is_valid_move(self, row, col):
+    def _is_valid_move(self, row: int, col: int) -> bool:
         return self._is_valid_coord(row) and self._is_valid_coord(col) and \
-               not self.grid[row][col].visible
+               not self.grid[row][col].is_visible
 
     ## CHECK ENDGAME STATUS ##
 
-    def _turn_all_visible(self):
+    def _turn_all_visible(self) -> None:
         for row in range(self.grid_length):
             for col in range(self.grid_length):
-                self.grid[row][col].visible = True
+                self.grid[row][col].is_visible = True
 
-    def _update_game_status(self):
-        has_lost = any([mine.visible for mine in self.mines])
+    def _update_game_status(self) -> None:
+        has_lost = any([mine.is_visible for mine in self.mines])
         has_won = self.num_cells - self.num_mines == self.num_visible
         if has_lost:
             self.in_progress = False
@@ -153,14 +186,14 @@ class Minesweeper:
 
     ## IMPLEMENT THE GAME ##
 
-    def _is_valid_input_move(self, move):
+    def _is_valid_input_move(self, move: str) -> bool:
         try:
             row, col = map(int, move.split(","))
             return self._is_valid_move(row, col)
         except (TypeError, ValueError) as e:
             return False
 
-    def _get_valid_move(self):
+    def _get_valid_move(self) -> Tuple[int]:
         prompt = "Please enter a coordinate to play in the format 'row,col': "
         move = input(prompt)
         while not self._is_valid_input_move(move):
@@ -170,7 +203,7 @@ class Minesweeper:
         row, col = map(int, move.split(","))
         return row, col
 
-    def play_game(self):
+    def play_game(self) -> None:
         print("Welcome to this game of Minesweeper!")
         print("Here is your beginning {n}x{n} sized grid:".format(n=self.grid_length))
         print("There are {} mines... good luck!".format(self.num_mines))
@@ -182,34 +215,6 @@ class Minesweeper:
             print(self)
         print()
         print("Thank you for playing!!")
-
-class Cell:
-
-    def __init__(self, row, col, value):
-        assert type(row) == int and type(col) == int
-        self.row = row
-        self.col = col
-        self.value = value
-        self.is_mine = False
-        self.visible = False
-
-    def __repr__(self):
-        if not self.visible:
-            return " "
-        if self.value == 0:
-            return "."
-        return str(self.value)
-
-    def equals(self, cell):
-        return cell.row == self.row and cell.col == self.col
-
-    @classmethod
-    def get_random_mine(cls, max_val):
-        row = random.randint(0, max_val)
-        col = random.randint(0, max_val)
-        mine = cls(row, col, "X")
-        mine.is_mine = True
-        return mine
 
 if __name__ == "__main__":
     ms = Minesweeper()
