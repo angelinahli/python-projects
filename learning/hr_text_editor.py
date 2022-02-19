@@ -30,14 +30,12 @@ def run():
         
         ## process the operation
         if op == "1":
-            new_state = cur + param
-            state.append(new_state)
-            cur = new_state
+            cur = cur + param
+            state.append(cur)
         elif op == "2":
             new_str_len = len(cur) - int(param)
-            new_state = cur[:new_str_len]
-            state.append(new_state)
-            cur = new_state
+            cur = cur[:new_str_len]
+            state.append(cur)
         elif op == "3":
             ## this operation doesn't change the state at all
             index = int(param) - 1
